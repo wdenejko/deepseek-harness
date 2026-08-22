@@ -11,6 +11,7 @@ import { BashCardController, type BashSettings } from '../src/client/bash-card-c
 import {
   SettingsDescribeMirror, type SettingsMirrorSnapshot,
 } from '@deepseek-ai/dsh-client-ui-settings/src/client/settings-mirror.ts'
+import { SearxngCardController, type SearxngSettings } from '../src/client/searxng-card-controller.ts'
 import { ConfigurablePluginsTabController } from '../src/client/tab-store.ts'
 import { WebSearchCardController, type WebSearchSettings } from '../src/client/web-search-card-controller.ts'
 
@@ -540,6 +541,70 @@ describe('WebSearchCardController', () => {
 
     expect(host.set.mock.calls).toEqual([['baseURL', 'https://other.test'], ['maxUses', 3]])
     expect(credentials.set).not.toHaveBeenCalled()
+  })
+})
+
+describe('SearxngCardController', () => {
+  it('projects every field and saves them in one write pass', async () => {
+    const host = stubSettingsScope<SearxngSettings>()
+    acceptWrites(host)
+    const controller = new SearxngCardController(host.scope)
+    host.publish({
+      status: 'ready',
+      writable: true,
+      value: { baseURL: 'https://s.test', language: 'en', safeSearch: 1, engines: 'google' },
+      base: {},
+      user: { baseURL: 'https://s.test', language: 'en', safeSearch: 1, engines: 'google' },
+    })
+    const face = controller.inject()
+
+    expect(face.hooks.searxngCard.getSnapshot()).toMatchObject({
+      available: true,
+      writable: true,
+      dirty: false,
+      baseURL: { text: 'https://s.test', overridden: true },
+      language: { text: 'en', overridden: true },
+      safeSearch: { text: '1', overridden: true },
+      engines: { text: 'google', overridden: true },
+    })
+
+    face.edit('baseURL', 'https://t.test')
+    face.edit('language', 'all')
+    face.edit('safeSearch', '2')
+    face.edit('engines', 'bing')
+    expect(face.hooks.searxngCard.getSnapshot().dirty).toBe(true)
+
+    face.save()
+    await vi.waitFor(() => { expect(host.set).toHaveBeenCalledTimes(4) })
+
+    expect(host.set.mock.calls).toEqual([
+      ['baseURL', 'https://t.test'],
+      ['language', 'all'],
+      ['safeSearch', 2],
+      ['engines', 'bing'],
+    ])
+    expect(face.hooks.searxngCard.getSnapshot().dirty).toBe(false)
+  })
+
+  it('stages a reset and applies it on save', async () => {
+    const host = stubSettingsScope<SearxngSettings>()
+    acceptWrites(host)
+    const controller = new SearxngCardController(host.scope)
+    host.publish({
+      status: 'ready',
+      writable: true,
+      value: { baseURL: 'https://s.test' },
+      base: {},
+      user: { baseURL: 'https://s.test' },
+    })
+    const face = controller.inject()
+
+    face.resetField('baseURL')
+    expect(face.hooks.searxngCard.getSnapshot().baseURL.text).toBe('')
+
+    face.save()
+    await vi.waitFor(() => { expect(host.unset).toHaveBeenCalledWith('baseURL') })
+    expect(face.hooks.searxngCard.getSnapshot().dirty).toBe(false)
   })
 })
 

@@ -35,3 +35,7 @@ DeepSeek 搜索使用与官方会话适配器相同的 `DEEPSEEK_API_KEY` 凭据
 ## 后果
 
 每个已交付界面的原生模型请求都只会携带 `web_search` schema，以及仅用于搜索的提示词指引；Web／无头 Code Mode 通过 `run_code` 公开相同的搜索能力。该提示词要求模型使用返回的 snippet，且绝不会向模型提及已禁用的 `web_fetch` 工具。搜索会增加一次完整的辅助模型调用，并可能多次使用原生服务器工具；发起会话的日志仍可精确重建其不含密钥的请求。默认配置会提供搜索结果 snippet 与来源元数据，但不支持任意页面抓取；需要抓取完整页面的部署必须自行选择启用抓取。Web 快照通道会启动已交付配置树，使用本地 Messages fixture（测试前置数据），经由真实 DeepSeek 提供方驱动一次回放的 `web_search` 调用，断言持久化的辅助请求与结构化结果，并固定最终浏览器呈现。TUI/Web 组合冒烟测试固定了共享的 `web_search` 清单及不提供 `web_fetch` 这一事实；构建后组合配置的转储固定了已交付的一分钟搜索预算；提供方测试固定缺失、已存储及已轮换凭据的行为，以及字面值与环境变量的兼容性。
+
+## Related
+
+随产品提供的默认搜索提供方现在是 SearXNG，而非 `deepseek-official`——见 [SearXNG 默认搜索](2026-08-22-searxng-default-search.zh.md)。本 note 中关于将 `web_search` 作为跨界面默认、禁用抓取的立场，以及 DeepSeek 提供方的凭据解析机制，均仍然有效；DeepSeek 搜索配置项现在是可选项，而非随产品提供的默认。

@@ -11,6 +11,9 @@ export type PluginsSettingsLocaleKey =
   | 'webSearchTitle' | 'webSearchDescription'
   | 'webSearchApiKey' | 'webSearchApiKeyHint' | 'webSearchApiKeySet' | 'webSearchApiKeyUnset'
   | 'webSearchBaseUrl' | 'webSearchBaseUrlHint' | 'webSearchMaxUses' | 'webSearchMaxUsesHint'
+  | 'searxngTitle' | 'searxngDescription' | 'searxngBaseUrl' | 'searxngBaseUrlHint'
+  | 'searxngLanguage' | 'searxngLanguageHint' | 'searxngSafeSearch' | 'searxngSafeSearchHint'
+  | 'searxngEngines' | 'searxngEnginesHint'
 
 /** English copy. */
 export const en: Record<PluginsSettingsLocaleKey, string> = {
@@ -51,6 +54,16 @@ export const en: Record<PluginsSettingsLocaleKey, string> = {
   webSearchBaseUrlHint: 'Leave blank to use the provider default.',
   webSearchMaxUses: 'Max searches per request',
   webSearchMaxUsesHint: 'How many times one request may search before it must answer.',
+  searxngTitle: 'Web search',
+  searxngDescription: 'The SearXNG search provider.',
+  searxngBaseUrl: 'Endpoint',
+  searxngBaseUrlHint: 'The SearXNG instance URL (JSON output must be enabled). Blank uses $SEARXNG_BASE_URL.',
+  searxngLanguage: 'Language',
+  searxngLanguageHint: 'UI/engine language, e.g. en or all. Blank uses the instance default.',
+  searxngSafeSearch: 'Safe search',
+  searxngSafeSearchHint: '0 off, 1 moderate, 2 strict. Blank uses the instance default.',
+  searxngEngines: 'Engines',
+  searxngEnginesHint: 'Comma-separated engines to query, e.g. google,bing. Blank uses the instance default.',
 }
 
 /** Simplified Chinese copy. */
@@ -92,4 +105,14 @@ export const zh: Record<PluginsSettingsLocaleKey, string> = {
   webSearchBaseUrlHint: '留空则使用提供方默认地址。',
   webSearchMaxUses: '单次请求最多搜索次数',
   webSearchMaxUsesHint: '一次请求在必须作答前最多可以搜索多少次。',
+  searxngTitle: '网页搜索',
+  searxngDescription: 'SearXNG 搜索提供方。',
+  searxngBaseUrl: '接口地址',
+  searxngBaseUrlHint: 'SearXNG 实例地址（需启用 JSON 输出）。留空则使用 $SEARXNG_BASE_URL。',
+  searxngLanguage: '语言',
+  searxngLanguageHint: '界面／引擎语言，例如 en 或 all。留空则使用实例默认值。',
+  searxngSafeSearch: '安全搜索',
+  searxngSafeSearchHint: '0 关闭、1 适中、2 严格。留空则使用实例默认值。',
+  searxngEngines: '搜索引擎',
+  searxngEnginesHint: '要查询的引擎，逗号分隔，例如 google,bing。留空则使用实例默认值。',
 }

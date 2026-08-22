@@ -3190,6 +3190,41 @@ export interface Config {
 
 来源：[`packages/web/web-search-perplexity/src/index.ts:32`](../packages/web/web-search-perplexity/src/index.ts)
 
+<a id="deepseek-aidsh-web-search-searxng"></a>
+
+## `@deepseek-ai/dsh-web-search-searxng`
+
+需要：`web`
+
+```ts config-catalog
+/** Plugin config (all optional — `apply` fills the env-var default). */
+export interface Config {
+  /**
+   * SearXNG instance base; `/search` is appended. Falls back to
+   * `$SEARXNG_BASE_URL`. Absent/unparseable → provider unavailable.
+   */
+  baseURL?: string
+  /** UI/engine language sent as `language` (e.g. `en`, `all`). Omitted = instance default. */
+  language?: string
+  /** Safe-search level sent as `safesearch` (0 off, 1 moderate, 2 strict). Omitted = instance default. */
+  safeSearch?: SearxngSafeSearch
+  /** Recency window sent as `time_range`. Omitted = no filter. */
+  timeRange?: SearxngTimeRange
+  /** Comma-separated category list sent as `categories`. Omitted = instance default. */
+  categories?: string
+  /** Comma-separated engine list sent as `engines`. Omitted = instance default. */
+  engines?: string
+}
+
+/** Safe-search level SearXNG accepts for `safesearch` (0 off, 1 moderate, 2 strict). */
+export type SearxngSafeSearch = 0 | 1 | 2
+
+/** Time-range filter values SearXNG accepts for `time_range`. */
+export type SearxngTimeRange = 'day' | 'week' | 'month' | 'year'
+```
+
+来源：[`packages/web/web-search-searxng/src/index.ts:48`](../packages/web/web-search-searxng/src/index.ts)
+
 <a id="deepseek-aidsh-workflow-worker-thread"></a>
 
 ## `@deepseek-ai/dsh-workflow-worker-thread`

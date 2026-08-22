@@ -17,11 +17,14 @@ import { ConfigurablePluginsTab } from '../src/client/ConfigurablePluginsTab.tsx
 import type { ConfigurablePluginsTabProps } from '../src/client/ConfigurablePluginsTab.tsx'
 import { PluginsSettingsSection } from '../src/client/PluginsSettingsSection.tsx'
 import type { PluginsSettingsSectionProps, PluginsSettingsTabEntry } from '../src/client/PluginsSettingsSection.tsx'
+import { SearxngCard } from '../src/client/SearxngCard.tsx'
+import type { SearxngCardProps } from '../src/client/SearxngCard.tsx'
 import { WebSearchCard } from '../src/client/WebSearchCard.tsx'
 import type { WebSearchCardProps } from '../src/client/WebSearchCard.tsx'
 import type { AgentLoopCardState } from '../src/client/agent-loop-card-controller.ts'
 import type { BashCardState } from '../src/client/bash-card-controller.ts'
 import type { CardFieldState, CardShell } from '../src/client/card-form.ts'
+import type { SearxngCardState } from '../src/client/searxng-card-controller.ts'
 import type { ConfigurablePluginsTabState } from '../src/client/tab-store.ts'
 import type { WebSearchCardState } from '../src/client/web-search-card-controller.ts'
 import { en } from '../src/client/locales.ts'
@@ -415,5 +418,66 @@ describe('WebSearchCard', () => {
       ['maxUses', '4'],
     ])
     expect(actions.resetField.mock.calls).toEqual([['baseURL'], ['maxUses']])
+  })
+})
+
+function renderSearxng(state: Partial<SearxngCardState> = {}) {
+  const store = createSnapshotStore<SearxngCardState>({
+    ...settled,
+    baseURL: field(''),
+    language: field(''),
+    safeSearch: field(''),
+    engines: field(''),
+    ...state,
+  })
+  const actions = cardActions()
+  const props = { ...actions, t, useSearxngCard: bindSnapshotSelector(store) } as unknown as SearxngCardProps
+  render(<SearxngCard {...props} />)
+  return actions
+}
+
+describe('SearxngCard', () => {
+  it('renders nothing while its namespace is unavailable', () => {
+    const { container } = render(<div />)
+    renderSearxng({ available: false })
+
+    expect(container.textContent).toBe('')
+    expect(screen.queryByText(en.searxngTitle)).toBeNull()
+  })
+
+  it('reveals its fields only once expanded and stages each edit', () => {
+    const actions = renderSearxng()
+    expect(screen.getByText(en.searxngDescription)).toBeTruthy()
+    expect(screen.queryByLabelText(en.searxngBaseUrl)).toBeNull()
+
+    fireEvent.click(screen.getByText(en.searxngTitle))
+
+    fireEvent.change(screen.getByLabelText(en.searxngBaseUrl), { target: { value: 'https://s.test' } })
+    fireEvent.change(screen.getByLabelText(en.searxngLanguage), { target: { value: 'en' } })
+    fireEvent.change(screen.getByLabelText(en.searxngSafeSearch), { target: { value: '1' } })
+    fireEvent.change(screen.getByLabelText(en.searxngEngines), { target: { value: 'google,bing' } })
+
+    expect(actions.edit.mock.calls).toEqual([
+      ['baseURL', 'https://s.test'],
+      ['language', 'en'],
+      ['safeSearch', '1'],
+      ['engines', 'google,bing'],
+    ])
+  })
+
+  it('offers a reset for each overridden field', () => {
+    const actions = renderSearxng({
+      baseURL: field('https://s.test', { overridden: true }),
+      language: field('en', { overridden: true }),
+      safeSearch: field('1', { overridden: true }),
+      engines: field('google', { overridden: true }),
+    })
+    fireEvent.click(screen.getByText(en.searxngTitle))
+
+    const resets = screen.getAllByRole('button', { name: en.reset })
+    expect(resets).toHaveLength(4)
+    for (const reset of resets) fireEvent.click(reset)
+
+    expect(actions.resetField.mock.calls).toEqual([['baseURL'], ['language'], ['safeSearch'], ['engines']])
   })
 })

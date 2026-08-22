@@ -76,7 +76,8 @@ describe('web e2e: plugin configuration section', () => {
     const dialog = await openPlugins()
 
     // Every card the shipped web composition exposes: the shell executor, the
-    // agent loop, and the DeepSeek search provider.
+    // agent loop, and the SearXNG search provider (the shipped default, whose
+    // endpoint is editable here).
     await dialog.getByText('终端', { exact: true }).waitFor({ timeout: 10_000 })
     expect(await dialog.getByText('Agent 循环', { exact: true }).count()).toBe(1)
     expect(await dialog.getByText('网页搜索', { exact: true }).count()).toBe(1)
@@ -169,6 +170,28 @@ describe('web e2e: plugin configuration section', () => {
       .toBe(false)
     expect(await timeout.inputValue()).toBe('60000')
     expect(await dialog.getByText('已覆盖').count()).toBe(0)
+    expect(tripwire.pageErrors).toEqual([])
+  }, 60_000)
+
+  it('edits the SearXNG endpoint and writes it on save', async () => {
+    onTestFailed(() => saveFailureShot(page, 'web-e2e-plugin-config-searxng'))
+    const dialog = await openPlugins()
+    await dialog.getByText('网页搜索', { exact: true }).click()
+
+    const endpoint = dialog.getByLabel('接口地址')
+    await endpoint.waitFor({ timeout: 10_000 })
+    await endpoint.fill('https://searx.example.test')
+    await endpoint.blur()
+
+    // Nothing crosses the wire until the user saves.
+    expect(await settingsDocument()).not.toContain('searx.example.test')
+    const save = dialog.getByRole('button', { name: '保存', exact: true })
+    await expect.poll(() => save.isEnabled(), { timeout: 5_000 }).toBe(true)
+    await save.click()
+
+    await expect.poll(async () => (await settingsDocument()).includes('https://searx.example.test'), { timeout: 10_000 })
+      .toBe(true)
+    expect(await settingsDocument()).toContain('web-search-searxng')
     expect(tripwire.pageErrors).toEqual([])
   }, 60_000)
 
