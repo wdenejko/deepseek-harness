@@ -1034,6 +1034,37 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
     ],
   },
   {
+    key: 'localModels',
+    summary: 'SSH-backed local-model lifecycle manager.',
+    description: 'SSH-backed local-model lifecycle manager. Discovery and start/stop each run one remote command; run-state comes from probing the model endpoint. One model runs at a time, so `start` stops the current server first.',
+    methods: [
+      {
+        signature: 'async list(signal?: AbortSignal): Promise<LocalModelCatalog>',
+        description: 'Discover the remote run scripts and fold in current run-state.',
+        parameters: [{ name: 'signal', description: 'aborts discovery and the endpoint probe.' }],
+        returns: 'the local catalog with the running entry and per-entry state.',
+      },
+      {
+        signature: 'async status(signal?: AbortSignal): Promise<LocalModelStatus>',
+        description: 'Probe the model endpoint directly.',
+        parameters: [{ name: 'signal', description: 'aborts the probe.' }],
+        returns: 'the endpoint\'s health and served model id.',
+      },
+      {
+        signature: 'async start(id: string, signal?: AbortSignal): Promise<void>',
+        description: 'Make one model the server running on the endpoint: stop the current server (only one fits), launch the requested script detached, and mark it `starting`. Readiness is observed by a later list/status.',
+        parameters: [{ name: 'id', description: 'script slug to start.' }, { name: 'signal', description: 'aborts the stop/launch commands (not the launched server).' }],
+        throws: ['Error for an unknown/unsafe id, an SSH failure, or a non-zero remote exit.'],
+      },
+      {
+        signature: 'async stop(signal?: AbortSignal): Promise<void>',
+        description: 'Stop the running model server, freeing the endpoint and the accelerator.',
+        parameters: [{ name: 'signal', description: 'aborts the stop command.' }],
+        throws: ['Error on an SSH failure or a stop-command exit other than success/no-match.'],
+      },
+    ],
+  },
+  {
     key: 'lsp',
     summary: 'The LSP capability seam (`ctx.lsp`).',
     description: 'The LSP capability seam (`ctx.lsp`). Owns provider registration/selection and normalized query execution; exposes exactly the four operations and no protocol escape hatch.',
@@ -2622,6 +2653,14 @@ export const EVENT_API: readonly EventApiEntry[] = [
     parameters: [{ name: 'options', description: 'the full request. A LOOP-built request carries the process-local {@link markAgentLoopRequest} identity and arrives deep-frozen (mutation throws): its content is a pure function of the session log (the reconstructability Agent Note), so listeners read it, never rewrite it. Hand-built calls do not carry that marker; their messages already obey the immutable creation contract.' }],
   },
   {
+    name: 'localModels/state-changed',
+    mode: 'emit',
+    signature: '\'localModels/state-changed\'(): void',
+    summary: 'A local model server\'s lifecycle changed — a start was launched or a stop ran.',
+    description: 'A local model server\'s lifecycle changed — a start was launched or a stop ran. Consumers refetch the catalog; the payload-free nudge mirrors `llm/adapters-updated`.',
+    parameters: [],
+  },
+  {
     name: 'session-telemetry/record',
     mode: 'waterfall',
     signature: '\'session-telemetry/record\'(record: SessionTelemetryRecord, next: () => SessionTelemetryRecord): SessionTelemetryRecord',
@@ -3648,6 +3687,26 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'LlmRuntime',
     declaration: 'export class LlmRuntime extends Service {\n    constructor(ctx: Context);\n    registerAdapter(providers: string[], adapter: LlmAdapter): AdapterRegistrationHandle;\n    listProviders(): LlmProviderInfo[];\n    registerConfigurableProviders(entries: readonly LlmConfigurableProvider[]): DirectoryRegistrationHandle;\n    listConfigurableProviders(): LlmConfigurableProvider[];\n    registerModelDiscovery(settingsNs: string, discover: (request: LlmModelDiscoveryRequest) => Promise<readonly LlmDiscoveredModel[]>): () => void;\n    async discoverModels(settingsNs: string, request: LlmModelDiscoveryRequest): Promise<LlmDiscoveredModel[]>;\n    providerRetryPolicy(provider: string): ResolvedRetryPolicy;\n    async listModels(provider: string): Promise<LlmModelInfo[]>;\n    async resolveModelInfo(provider: string, model: string, signal?: AbortSignal): Promise<LlmResolvedModelInfo>;\n    async resolveCallConfig(config: LlmCallConfig, signal?: AbortSignal): Promise<LlmCallConfig>;\n    async prepareCall(config: LlmCallConfig, signal?: AbortSignal): Promise<PreparedLlmCall>;\n    stream(options: GenerateOptions): AsyncIterable<StreamChunk>;\n}',
+  },
+  {
+    name: 'LocalModelCatalog',
+    declaration: 'export interface LocalModelCatalog {\n    providerId: string;\n    route: LocalModelRoute;\n    running: string | null;\n    models: readonly LocalModelEntry[];\n}',
+  },
+  {
+    name: 'LocalModelEntry',
+    declaration: 'export interface LocalModelEntry {\n    id: string;\n    name: string;\n    alias?: string;\n    description?: string;\n    runState: LocalModelRunState;\n    scriptPath: string;\n}',
+  },
+  {
+    name: 'LocalModelRoute',
+    declaration: 'export interface LocalModelRoute {\n    provider: string;\n    model: string;\n}',
+  },
+  {
+    name: 'LocalModelRunState',
+    declaration: 'export type LocalModelRunState = \'running\' | \'starting\' | \'stopped\';',
+  },
+  {
+    name: 'LocalModelStatus',
+    declaration: 'export interface LocalModelStatus {\n    runningAlias: string | null;\n    healthy: boolean;\n}',
   },
   {
     name: 'LspHover',

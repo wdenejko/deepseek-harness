@@ -58,6 +58,13 @@ export class ModelDirectoryResolver extends Service {
     }
     ctx.remote.$on('llm/adapters-updated', refresh)
     ctx.remote.$on('settings/document-updated', refresh)
+    // A local model server started or stopped somewhere; refetch the local
+    // catalog so every client's run-state badges converge.
+    ctx.remote.$on('localModels/state-changed', () => {
+      for (const directory of this.live.directories.values()) {
+        directory.loadLocal().catch(() => undefined)
+      }
+    })
   }
 
   /**
@@ -76,6 +83,7 @@ export class ModelDirectoryResolver extends Service {
     const connection = this.ctx.get('connection') as ConnectionHandle
     const directory = new ModelDirectory(
       connection.api.sessions,
+      connection.api.localModels,
       sessionId,
       () => sessions.subagentAddress(sessionId) === undefined,
     )

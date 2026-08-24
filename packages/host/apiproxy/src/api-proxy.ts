@@ -68,6 +68,8 @@ import type {} from '@deepseek-ai/dsh-session-projection-cache'
 // GoalError narrows domain rejections to their stable codes at the wire boundary.
 import { GoalError } from '@deepseek-ai/dsh-goal'
 import type { GoalRef as CoreGoalRef } from '@deepseek-ai/dsh-goal'
+// Loads the `ctx.localModels` Context augmentation so the optional seam types below resolve.
+import type {} from '@deepseek-ai/dsh-local-models'
 // Type-only edges: resolve the command-change stream and `ctx.get('skills')`.
 import type {} from '@deepseek-ai/dsh-commands'
 // Type-only: the dynamic-package runner's forwarded-event declarations. Its
@@ -3320,6 +3322,46 @@ export function createApiProxy(ctx: Context, defaults: ApiProxyDefaults): ApiPro
             message: error instanceof Error ? error.message : String(error),
             details: { settingsNs, ...baseURL === undefined ? {} : { baseURL } },
           })
+        }
+      },
+    },
+
+    localModels: {
+      async list(request) {
+        const service = ctx.get('localModels')
+        // The seam is opt-in: absent means "no local-model management here", which
+        // a null catalog conveys without an error the client must special-case.
+        if (service === undefined) return ok(request, { catalog: null })
+        try {
+          return ok(request, { catalog: await service.list() })
+        } catch (error: unknown) {
+          return err(request, { code: 'local-models-error', message: error instanceof Error ? error.message : String(error), details: {} })
+        }
+      },
+
+      async start(request) {
+        const service = ctx.get('localModels')
+        if (service === undefined) {
+          return err(request, { code: 'local-models-error', message: 'local model management is not configured', details: {} })
+        }
+        try {
+          await service.start(request.payload.id)
+          return ok(request, { ok: true })
+        } catch (error: unknown) {
+          return err(request, { code: 'local-models-error', message: error instanceof Error ? error.message : String(error), details: {} })
+        }
+      },
+
+      async stop(request) {
+        const service = ctx.get('localModels')
+        if (service === undefined) {
+          return err(request, { code: 'local-models-error', message: 'local model management is not configured', details: {} })
+        }
+        try {
+          await service.stop()
+          return ok(request, { ok: true })
+        } catch (error: unknown) {
+          return err(request, { code: 'local-models-error', message: error instanceof Error ? error.message : String(error), details: {} })
         }
       },
     },

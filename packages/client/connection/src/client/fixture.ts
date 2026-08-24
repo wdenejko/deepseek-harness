@@ -2923,6 +2923,12 @@ function createFixtureWorld(options: FixtureOptions): FixtureWorld {
         ),
       ),
     },
+    localModels: {
+      // The demo fixture mounts no local-model seam; a null catalog is the absent signal.
+      list: request => ok(request, { catalog: null }),
+      start: request => ok(request, { ok: true as const }),
+      stop: request => ok(request, { ok: true as const }),
+    },
     events: {
       async *mux(_request, signal) {
         const conn = new FxInbox<MuxFrame>()
@@ -3216,6 +3222,9 @@ export class FixtureApiClient extends AbstractApiClient {
       case 'goal.resume': return this.api.goals.resume(request)
       case 'goal.complete': return this.api.goals.complete(request)
       case 'goal.clear': return this.api.goals.clear(request)
+      case 'localModels.list': return this.api.localModels.list(request)
+      case 'localModels.start': return this.api.localModels.start(request)
+      case 'localModels.stop': return this.api.localModels.stop(request)
       case 'settings.describe': return this.api.settings.describe(request)
       case 'settings.openDocument': return this.api.settings.openDocument(request, signal)
       case 'settings.update': return this.api.settings.update(request)

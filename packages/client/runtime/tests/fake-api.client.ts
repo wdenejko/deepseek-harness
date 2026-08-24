@@ -258,6 +258,12 @@ export class FakeApiClient implements IApiClient {
     clear: payload => this.record('goal.clear', payload, Promise.resolve(ok({ cleared: true as const }))),
   }
 
+  readonly localModels: IApiClient['localModels'] = {
+    list: payload => this.record('localModels.list', payload, Promise.resolve(ok({ catalog: null }))),
+    start: payload => this.record('localModels.start', payload, Promise.resolve(ok({ ok: true as const }))),
+    stop: payload => this.record('localModels.stop', payload, Promise.resolve(ok({ ok: true as const }))),
+  }
+
   readonly settings: IApiClient['settings'] = {
     describe: payload => this.record('settings.describe', payload, Promise.resolve(ok({ writable: true, hasDocument: false, namespaces: [] }))),
     openDocument: payload => this.record('settings.openDocument', payload, Promise.resolve(ok({ opened: true as const }))),

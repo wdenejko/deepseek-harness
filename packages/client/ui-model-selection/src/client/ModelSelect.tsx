@@ -16,7 +16,7 @@ import {
   type KeyboardEvent, type FocusEvent,
 } from 'react'
 import clsx from 'clsx'
-import type { ModelReasoningEffort, ModelSelection } from '@deepseek-ai/dsh-api-remotes/client'
+import type { LocalModelEntry, ModelReasoningEffort, ModelSelection } from '@deepseek-ai/dsh-api-remotes/client'
 import {
   IconCheckOutline16, IconChevronDownOutline14, IconChevronRightOutline14,
   IconWarningOutline16, Toast,
@@ -24,6 +24,9 @@ import {
 import type { PropsLocale } from '@deepseek-ai/dsh-client-ui-slots'
 import type { ModelSelectInjected } from './slots.ts'
 import css from './ModelSelect.module.css'
+
+/** Poll interval for advancing a starting local model to running while the menu is open. */
+const LOCAL_POLL_MS = 3_000
 
 /** Which pane the dropdown shows: the two-row root or one drilled-in list. */
 type Pane = 'root' | 'model' | 'effort'
@@ -43,7 +46,7 @@ interface EffortChoice {
  * @returns the trigger and, while open, the two-level menu.
  */
 export function ModelSelect(
-  { locked, available, directory, load, select, t }:
+  { locked, available, directory, load, loadLocal, select, startLocal, stopLocal, t }:
   ModelSelectInjected & { locked: boolean } & PropsLocale<'model'>,
 ) {
   const state = useSyncExternalStore(
@@ -102,6 +105,19 @@ export function ModelSelect(
     ], [reasoning, t])
   const busy = state.status === 'selecting'
 
+  // Local models are a lifecycle section, not llm-catalog rows: the plain llm
+  // group for the local provider is filtered out (the section supersedes it),
+  // and the "current" local model is whichever one is actually running.
+  const local = state.local
+  const localProviderId = local?.providerId
+  const visibleGroups = useMemo(
+    () => state.groups.filter(group => group.id !== localProviderId),
+    [state.groups, localProviderId],
+  )
+  const onLocalRoute = local !== null && state.current?.provider === local.providerId
+  const runningLocalModel = local?.models.find(model => model.id === local.running)
+  const hasStartingLocal = local?.models.some(model => model.runState === 'starting') ?? false
+
   const reload = (): void => {
     lastActionRef.current = 'load'
     load()
@@ -124,12 +140,23 @@ export function ModelSelect(
     return () => { document.removeEventListener('mousedown', closeOutside) }
   }, [open])
 
+  // While a local model is loading on the remote host, poll the local catalog
+  // so its badge advances from starting to running without a manual refresh.
+  useEffect(() => {
+    if (!open || !hasStartingLocal) return
+    const timer = setInterval(loadLocal, LOCAL_POLL_MS)
+    return () => { clearInterval(timer) }
+  }, [open, hasStartingLocal, loadLocal])
+
   if (!available) return null
 
   const show = (): void => {
     setPane('root')
     setOpen(true)
     reload()
+    // Refresh the local run-state on open, mirroring the llm catalog reload, so
+    // the badges reflect what is actually running when the user looks.
+    loadLocal()
   }
 
   const close = (restoreFocus = false): void => {
@@ -187,6 +214,34 @@ export function ModelSelect(
     void select(selection).then(settleSelection)
   }
 
+  // A rejected local start/stop announces through the same transient toast as a
+  // rejected selection; a successful start closes the menu like a pick.
+  const settleLocal = (accepted: boolean): void => {
+    if (accepted) {
+      if (rootRef.current !== null) close(true)
+      return
+    }
+    const message = directory.getSnapshot().localError
+    if (message !== null) {
+      toastSeq.current += 1
+      setToast({ seq: toastSeq.current, text: t('error.action', { message }) })
+    }
+  }
+
+  const chooseLocal = (model: LocalModelEntry): void => {
+    // The running model is already the current one; picking it just closes.
+    if (model.runState === 'running') {
+      close(true)
+      return
+    }
+    lastActionRef.current = 'select'
+    void startLocal(model.id).then(settleLocal)
+  }
+
+  const stopLocalModel = (): void => {
+    void stopLocal().then((accepted) => { if (!accepted) settleLocal(false) })
+  }
+
   const chooseEffort = (effort: string | undefined): void => {
     if (state.current === null) return
     if (effectiveEffort === effort) {
@@ -202,9 +257,16 @@ export function ModelSelect(
     void select(selection).then(settleSelection)
   }
 
-  const modelLabel = currentChoice?.model.name ?? t('trigger.fallback')
+  // On the local route the meaningful label is the running script, not the
+  // single llm model id the route advertises.
+  const modelLabel = onLocalRoute && runningLocalModel !== undefined
+    ? runningLocalModel.name
+    : currentChoice?.model.name ?? t('trigger.fallback')
   const triggerLabel = effortLabel === undefined ? modelLabel : `${modelLabel} · ${effortLabel}`
-  const triggerAria = currentChoice === undefined
+  // A running local model on the local route is a current label even when the
+  // llm catalog carries no group for it.
+  const hasCurrentLabel = currentChoice !== undefined || (onLocalRoute && runningLocalModel !== undefined)
+  const triggerAria = !hasCurrentLabel
     ? t('trigger.selectAria')
     : effortLabel === undefined
       ? t('trigger.aria', { model: modelLabel })
@@ -284,7 +346,7 @@ export function ModelSelect(
                 </div>
               ))}
               <div className={clsx(css.groups, 'scrollable')}>
-                {state.groups.map((group) => {
+                {visibleGroups.map((group) => {
                   const headingId = `${id}-${group.id}`
                   return (
                     <section role="group" aria-labelledby={headingId} className={css.group} key={group.id}>
@@ -318,8 +380,55 @@ export function ModelSelect(
                     </section>
                   )
                 })}
+                {local !== null && local.models.length > 0 && (
+                  <section role="group" aria-labelledby={`${id}-local`} className={css.group}>
+                    <div className={css.groupTitle} id={`${id}-local`}>{t('local.title')}</div>
+                    {local.models.map((model) => {
+                      const running = model.runState === 'running'
+                      const starting = model.runState === 'starting'
+                      return (
+                        <div className={css.localRow} key={model.id}>
+                          <button
+                            ref={itemRef()}
+                            type="button"
+                            role="menuitemradio"
+                            aria-checked={running}
+                            className={clsx(css.option, css.localPick, running && css.selected)}
+                            title={model.description ?? model.name}
+                            disabled={busy || starting}
+                            onClick={() => { chooseLocal(model) }}
+                          >
+                            <span className={css.optionCopy}>
+                              <span className={css.modelName}>{model.name}</span>
+                            </span>
+                            <span className={clsx(css.badge, running ? css.badgeRunning : starting ? css.badgeStarting : css.badgeStopped)}>
+                              {running ? t('local.running') : starting ? t('local.starting') : t('local.stopped')}
+                            </span>
+                          </button>
+                          {running && (
+                            <button
+                              ref={itemRef()}
+                              type="button"
+                              className={css.localStop}
+                              aria-label={t('local.stopAria', { model: model.name })}
+                              disabled={busy}
+                              onClick={stopLocalModel}
+                            >
+                              {t('local.stop')}
+                            </button>
+                          )}
+                        </div>
+                      )
+                    })}
+                    {state.localError !== null && (
+                      <div className={css.error}>
+                        <span>{t('error.action', { message: state.localError })}</span>
+                      </div>
+                    )}
+                  </section>
+                )}
               </div>
-              {state.status === 'ready' && choices.length === 0 && (
+              {state.status === 'ready' && visibleGroups.length === 0 && (local === null || local.models.length === 0) && (
                 <div className={css.empty}>{t('empty.models')}</div>
               )}
             </>

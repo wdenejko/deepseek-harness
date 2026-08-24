@@ -1,0 +1,7 @@
+- menu "Model and reasoning effort":
+  - group "Local models":
+    - text: Local models
+    - menuitemradio "Qwen 3.8B instruct chat · DFlash 2 · nudge Stopped"
+    - menuitemradio "Llama 3 70B general · DSpark · no nudge Running" [checked]
+    - button "Stop Llama 3 70B general · DSpark · no nudge": Stop
+    - menuitemradio "DeepSeek R1 distill Stopped"

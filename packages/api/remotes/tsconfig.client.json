@@ -49,6 +49,9 @@
       "path": "../../llm/llm"
     },
     {
+      "path": "../../local-models/local-models"
+    },
+    {
       "path": "../../preset/agent-presets"
     },
     {

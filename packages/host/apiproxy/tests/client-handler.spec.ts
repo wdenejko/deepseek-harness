@@ -25,6 +25,7 @@ function scriptedApi(overrides: {
   agentPresets?: Partial<ApiProxy['agentPresets']>
   events?: Partial<ApiProxy['events']>
   goals?: Partial<ApiProxy['goals']>
+  localModels?: Partial<ApiProxy['localModels']>
   settings?: Partial<ApiProxy['settings']>
   credentials?: Partial<ApiProxy['credentials']>
   llm?: Partial<ApiProxy['llm']>
@@ -107,6 +108,12 @@ function scriptedApi(overrides: {
       complete: err,
       clear: err,
       ...overrides.goals,
+    },
+    localModels: {
+      list: r => ok(r, { catalog: null }),
+      start: err,
+      stop: err,
+      ...overrides.localModels,
     },
     settings: {
       describe: r => ok(r, { writable: true, hasDocument: false, namespaces: [] }),

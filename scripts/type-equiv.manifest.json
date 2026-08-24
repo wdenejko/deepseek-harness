@@ -1974,6 +1974,31 @@
       "doc": "docs/subsystems/feedback.md",
       "symbol": "MessageFeedbackDeleteResult",
       "source": "packages/feedback/message-feedback/src/types.ts"
+    },
+    {
+      "doc": "docs/subsystems/local-models.md",
+      "symbol": "LocalModelRunState",
+      "source": "packages/local-models/local-models/src/types.ts"
+    },
+    {
+      "doc": "docs/subsystems/local-models.md",
+      "symbol": "LocalModelRoute",
+      "source": "packages/local-models/local-models/src/types.ts"
+    },
+    {
+      "doc": "docs/subsystems/local-models.md",
+      "symbol": "LocalModelEntry",
+      "source": "packages/local-models/local-models/src/types.ts"
+    },
+    {
+      "doc": "docs/subsystems/local-models.md",
+      "symbol": "LocalModelCatalog",
+      "source": "packages/local-models/local-models/src/types.ts"
+    },
+    {
+      "doc": "docs/subsystems/local-models.md",
+      "symbol": "LocalModelStatus",
+      "source": "packages/local-models/local-models/src/types.ts"
     }
   ]
 }

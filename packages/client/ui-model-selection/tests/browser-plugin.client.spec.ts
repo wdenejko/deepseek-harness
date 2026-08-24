@@ -14,7 +14,7 @@ import { createScope } from '@deepseek-ai/dsh-client-runtime/client'
 import type { SessionId } from '@deepseek-ai/dsh-client-runtime/client'
 import { LocaleRuntime } from '@deepseek-ai/dsh-client-locale/client'
 import { TestRemote } from '@deepseek-ai/dsh-client-test-runtime'
-import type { ModelSelection } from '@deepseek-ai/dsh-api-remotes/client'
+import type { LocalModelCatalog, ModelSelection } from '@deepseek-ai/dsh-api-remotes/client'
 import type { CommandContribution, SelectOption } from '@deepseek-ai/dsh-client-ui-commands/client'
 import type { ModelSelectInjected } from '../src/client/slots.ts'
 import { apply, inject } from '../src/client/index.ts'
@@ -58,25 +58,48 @@ async function bench() {
   const ctx = new Context()
   let current: ModelSelection = { provider: 'deepseek-official', model: 'deepseek-v4-flash' }
   const calls = { models: 0, select: 0 }
-  ctx.provide('connection', { api: { sessions: {
-    models: () => {
-      calls.models += 1
-      return Promise.resolve({
-        result: { ok: true as const, value: { current, routable, groups: GROUPS, failures: [] } },
-      })
+  let localCatalog: LocalModelCatalog | null = {
+    providerId: 'local',
+    route: { provider: 'local', model: 'qwen' },
+    running: null,
+    models: [{ id: 'ornith', name: 'Ornith', runState: 'stopped', scriptPath: '/p/run-ornith.sh' }],
+  }
+  const localCalls = { list: 0, start: [] as string[], stop: 0 }
+  ctx.provide('connection', { api: {
+    sessions: {
+      models: () => {
+        calls.models += 1
+        return Promise.resolve({
+          result: { ok: true as const, value: { current, routable, groups: GROUPS, failures: [] } },
+        })
+      },
+      selectModel: (payload: { provider: string; model: string; reasoningEffort?: string }) => {
+        calls.select += 1
+        current = {
+          provider: payload.provider,
+          model: payload.model,
+          ...payload.reasoningEffort === undefined
+            ? {}
+            : { reasoningEffort: payload.reasoningEffort },
+        }
+        return Promise.resolve({ result: { ok: true as const, value: { selected: current } } })
+      },
     },
-    selectModel: (payload: { provider: string; model: string; reasoningEffort?: string }) => {
-      calls.select += 1
-      current = {
-        provider: payload.provider,
-        model: payload.model,
-        ...payload.reasoningEffort === undefined
-          ? {}
-          : { reasoningEffort: payload.reasoningEffort },
-      }
-      return Promise.resolve({ result: { ok: true as const, value: { selected: current } } })
+    localModels: {
+      list: () => {
+        localCalls.list += 1
+        return Promise.resolve({ result: { ok: true as const, value: { catalog: localCatalog } } })
+      },
+      start: (payload: { id: string }) => {
+        localCalls.start.push(payload.id)
+        return Promise.resolve({ result: { ok: true as const, value: { ok: true as const } } })
+      },
+      stop: () => {
+        localCalls.stop += 1
+        return Promise.resolve({ result: { ok: true as const, value: { ok: true as const } } })
+      },
     },
-  } } })
+  } })
   // Whether the Host reports an adapter for the current route; the composer
   // block follows this, never catalog membership.
   let routable = true
@@ -128,11 +151,12 @@ async function bench() {
     return handle
   }
   return {
-    ctx, fiber, mint, calls,
+    ctx, fiber, mint, calls, localCalls,
     contribution: () => contribution!,
     seat: () => seats.get('conversation.input.model')!,
     hostCurrent: () => current,
     setHostCurrent: (selection: ModelSelection) => { current = selection },
+    setLocalCatalog: (next: LocalModelCatalog | null) => { localCatalog = next },
     address: (id: SessionId) => { addressed.add(id) },
     setRoutable: (next: boolean) => { routable = next },
     blockOf: (key: string) => blocks.get(sid(key)),
@@ -324,5 +348,57 @@ describe('ui-model-selection dual entry', () => {
     b.ctx.emit('connection/reset')
     await Promise.resolve()
     expect(b.calls).toEqual({ models: 0, select: 0 })
+  })
+})
+
+describe('ui-model-selection local models', () => {
+  it('loads the local catalog into the shared directory', async () => {
+    const b = await bench()
+    b.mint('s1')
+    const face = b.seat().inject!(sid('s1'))
+    face.loadLocal()
+    await Promise.resolve()
+    await Promise.resolve()
+    expect(face.directory.getSnapshot().local?.models[0]?.id).toBe('ornith')
+    expect(b.localCalls.list).toBeGreaterThan(0)
+  })
+
+  it('starting a local model launches it and routes the session to the local endpoint', async () => {
+    const b = await bench()
+    b.mint('s1')
+    const face = b.seat().inject!(sid('s1'))
+    face.loadLocal()
+    await Promise.resolve()
+    await Promise.resolve()
+    expect(await face.startLocal('ornith')).toBe(true)
+    expect(b.localCalls.start).toEqual(['ornith'])
+    // startLocal routes the session at the local endpoint via the catalog route.
+    expect(b.hostCurrent()).toEqual({ provider: 'local', model: 'qwen' })
+  })
+
+  it('stops the running local model through the stop RPC', async () => {
+    const b = await bench()
+    b.mint('s1')
+    const face = b.seat().inject!(sid('s1'))
+    face.loadLocal()
+    await Promise.resolve()
+    await Promise.resolve()
+    expect(await face.stopLocal()).toBe(true)
+    expect(b.localCalls.stop).toBe(1)
+  })
+
+  it('refetches the local catalog on a state-changed event', async () => {
+    const b = await bench()
+    b.mint('s1')
+    const face = b.seat().inject!(sid('s1'))
+    face.loadLocal()
+    await Promise.resolve()
+    await Promise.resolve()
+    const before = b.localCalls.list
+    b.ctx.remote.$dispatch('localModels/state-changed', [])
+    await Promise.resolve()
+    await Promise.resolve()
+    expect(b.localCalls.list).toBeGreaterThan(before)
+    void face
   })
 })

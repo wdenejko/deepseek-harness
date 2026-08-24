@@ -92,6 +92,12 @@ export interface RpcErrorDetailsMap {
   'subagent-not-resumable': { childSessionId: SessionId }
   'subagent-unauthorized': { childSessionId: SessionId }
   'subagent-delivery-unavailable': { childSessionId: SessionId }
+  /**
+   * A local-model lifecycle operation failed: the `ctx.localModels` seam is not
+   * mounted (start/stop) or its SSH/probe transport errored. The message is the
+   * seam's own text. `list` uses a null catalog for the not-mounted case instead.
+   */
+  'local-models-error': {}
   'internal': {}
 }
 

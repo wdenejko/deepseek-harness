@@ -79,6 +79,7 @@ export const SERVICE_PAGE: Record<string, string> = {
   webServer: 'web-server.md',
   invariants: 'invariants.md',
   llm: 'llm-streaming.md',
+  localModels: 'local-models.md',
   lsp: 'lsp.md',
   messageFeedback: 'feedback.md',
   permissionPresets: 'permission-presets.md',
@@ -183,6 +184,7 @@ export const EVENT_SCOPE_PAGE: Record<string, string> = {
   'fs': 'filesystem.md',
   'goal': 'goal.md',
   'llm': 'llm-streaming.md',
+  'localModels': 'local-models.md',
   'session': 'session.md',
   'settings': 'settings.md',
   'skills': 'skills.md',
@@ -553,6 +555,8 @@ export const FOUNDATION_TYPE_NAMES: ReadonlySet<string> = new Set([
 /** Project types deliberately documented outside the subsystems catalog. */
 export const TYPE_LINK_EXEMPTIONS: Readonly<Record<string, string>> = {
   z: 'schemastery schema constructor is owned by vendor/schemastery (vendored upstream)',
+  LocalModelCatalog: 'local-model catalog view is owned by packages/local-models/local-models/README.md',
+  LocalModelStatus: 'local-model endpoint probe result is owned by packages/local-models/local-models/README.md',
   BeginCommandRequest: 'event-local request contract is owned by packages/client/ui-input-trigger/src/types.ts',
   InsertReferenceRequest: 'event-local request contract is owned by packages/client/ui-input-trigger/src/types.ts',
   ConsumeTokenRequest: 'event-local request contract is owned by packages/client/ui-input-trigger/src/types.ts',

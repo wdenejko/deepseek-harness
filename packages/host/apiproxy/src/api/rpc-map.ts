@@ -10,6 +10,7 @@ import type { WorkspaceApi } from './workspace.ts'
 import type { AgentPresetsApi } from './agent-presets.ts'
 import type { SkillsApi } from './skills.ts'
 import type { GoalsApi } from './goals.ts'
+import type { LocalModelsApi } from './local-models.ts'
 import type { SettingsApi } from './settings.ts'
 import type { CredentialsApi } from './credentials.ts'
 import type { LlmApi } from './llm.ts'
@@ -63,6 +64,9 @@ export interface RpcMethodMap {
   'goal.resume': GoalsApi['resume']
   'goal.complete': GoalsApi['complete']
   'goal.clear': GoalsApi['clear']
+  'localModels.list': LocalModelsApi['list']
+  'localModels.start': LocalModelsApi['start']
+  'localModels.stop': LocalModelsApi['stop']
   'settings.describe': SettingsApi['describe']
   'settings.openDocument': SettingsApi['openDocument']
   'settings.update': SettingsApi['update']

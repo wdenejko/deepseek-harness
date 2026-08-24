@@ -165,10 +165,14 @@ export function apply(ctx: ClientContext): void {
           directory: directory.store,
           load: () => {
             if (available) directory.load().catch(() => { /* surfaced on the store */ })
+            directory.loadLocal().catch(() => { /* surfaced on the store */ })
           },
+          loadLocal: () => { directory.loadLocal().catch(() => { /* surfaced on the store */ }) },
           select: (selection: ModelSelection) => available
             ? directory.select(selection).then(() => true, () => false)
             : Promise.resolve(false),
+          startLocal: (id: string) => directory.startLocal(id),
+          stopLocal: () => directory.stopLocal(),
         }
       },
     }, ModelSelect))

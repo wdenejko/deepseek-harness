@@ -27,6 +27,12 @@ export const zh = {
   'empty.models': '没有可用的模型。',
   'blocked.composer': '当前模型不可用，请先选择模型',
   'empty.efforts': '当前模型未提供推理等级。',
+  'local.title': '本地模型',
+  'local.running': '运行中',
+  'local.starting': '启动中…',
+  'local.stopped': '已停止',
+  'local.stop': '停止',
+  'local.stopAria': '停止 {model}',
 } satisfies Record<string, string>
 
 /** The model namespace key union. */
@@ -51,4 +57,10 @@ export const en = {
   'empty.models': 'No models available.',
   'blocked.composer': 'This model is unavailable — select one to continue',
   'empty.efforts': 'This model provides no reasoning effort levels.',
+  'local.title': 'Local models',
+  'local.running': 'Running',
+  'local.starting': 'Starting…',
+  'local.stopped': 'Stopped',
+  'local.stop': 'Stop',
+  'local.stopAria': 'Stop {model}',
 } satisfies Record<ModelKey, string>

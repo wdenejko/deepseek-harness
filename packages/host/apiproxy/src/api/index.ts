@@ -12,6 +12,7 @@ import type { SkillsApi } from './skills.ts'
 import type { SubagentsApi } from './subagents.ts'
 import type { EventsApi } from './events.ts'
 import type { GoalsApi } from './goals.ts'
+import type { LocalModelsApi } from './local-models.ts'
 import type { SettingsApi } from './settings.ts'
 import type { CredentialsApi } from './credentials.ts'
 import type { LlmApi } from './llm.ts'
@@ -28,6 +29,7 @@ export interface ApiProxy {
   agentPresets: AgentPresetsApi
   events: EventsApi
   goals: GoalsApi
+  localModels: LocalModelsApi
   settings: SettingsApi
   credentials: CredentialsApi
   llm: LlmApi
@@ -58,6 +60,7 @@ export type { SkillsApi, SkillEntry } from './skills.ts'
 export type { AgentPresetsApi, AgentPresetEntry } from './agent-presets.ts'
 export type { EventsApi, MuxFrame, HostFrame, QueuedInboxItem, ToolCallView, ToolEventView, ToolResultView } from './events.ts'
 export type { GoalsApi, GoalId, GoalRef } from './goals.ts'
+export type { LocalModelsApi, LocalModelCatalog, LocalModelEntry, LocalModelRoute, LocalModelRunState } from './local-models.ts'
 export type { SettingsApi, SettingsNamespaceView, SettingsPathOpView, SettingsSecretView } from './settings.ts'
 export type { CredentialsApi, CredentialView } from './credentials.ts'
 export type { ConfigurableProviderView, DiscoveredModelView, LlmApi } from './llm.ts'

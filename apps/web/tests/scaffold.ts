@@ -270,6 +270,25 @@ export interface LaunchOptions {
     baseURL: string
   }
   /**
+   * Insert the opt-in `@deepseek-ai/dsh-local-models` row (not in any shipped
+   * bundle) with a deterministic transport: `execCommand` points at a fake
+   * `ssh` that emulates the remote host, and `probeBaseURL` at a local HTTP
+   * double for the model endpoint. Exercises the assembled `ctx.localModels`
+   * seam and the model dropdown's Local models section without a real host.
+   */
+  localModels?: {
+    /** Local executable standing in for `ssh` (a fake receiving `<target> <remoteCommand>`). */
+    execCommand: string
+    /** Directory the fake reports run scripts under (any value; the fake ignores it for discovery). */
+    scriptsDir: string
+    /** Base URL of the local model-endpoint double, probed for `/health` and `/v1/models`. */
+    probeBaseURL: string
+    /** The llm provider id whose dropdown group the section supersedes. */
+    providerId: string
+    /** The llm selection a started server routes to (must be a routable provider/model). */
+    route: { provider: string; model: string }
+  }
+  /**
    * Replace the roster the scaffold mounts by default (the shipped directory
    * at `system` trust, default `standard`). Supply this only to change WHICH
    * presets a scenario sees — a writable user root, a different default —
@@ -508,6 +527,25 @@ export async function launchWebScaffold(options: LaunchOptions = {}): Promise<We
           baseURL: options.searxngSearch.baseURL,
         },
       }],
+    // The opt-in local-model lifecycle seam is in no shipped bundle, so it is
+    // inserted (not patched). Its `graceMs` is short so the fake ssh child is
+    // reaped promptly at teardown.
+    ...options.localModels === undefined
+      ? []
+      : [{ insert: [{
+        id: 'local-models',
+        name: '@deepseek-ai/dsh-local-models',
+        config: {
+          execCommand: options.localModels.execCommand,
+          sshTarget: 'fake-dashi',
+          scriptsDir: options.localModels.scriptsDir,
+          probeBaseURL: options.localModels.probeBaseURL,
+          providerId: options.localModels.providerId,
+          route: options.localModels.route,
+          probeTimeoutMs: 2_000,
+          graceMs: 1_000,
+        },
+      }] }],
     ...mode === 'record' || options.deepSeekMissingCredential === true
       ? []
       : [{ id: 'llm-deepseek', disabled: true }],

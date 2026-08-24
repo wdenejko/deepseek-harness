@@ -57,6 +57,9 @@ import {
   goalClearRequestSchema,
 } from '../api/goals.schema.ts'
 import {
+  localModelsListRequestSchema, localModelsStartRequestSchema, localModelsStopRequestSchema,
+} from '../api/local-models.schema.ts'
+import {
   settingsDescribeRequestSchema, settingsMutateRequestSchema, settingsOpenDocumentRequestSchema,
   settingsReplaceRequestSchema, settingsUpdateRequestSchema,
 } from '../api/settings.schema.ts'
@@ -129,6 +132,9 @@ const UNARY_ROUTES: UnaryRoutes = {
   'goal.resume': { schema: goalResumeRequestSchema, invoke: (api, r) => api.goals.resume(r) },
   'goal.complete': { schema: goalCompleteRequestSchema, invoke: (api, r) => api.goals.complete(r) },
   'goal.clear': { schema: goalClearRequestSchema, invoke: (api, r) => api.goals.clear(r) },
+  'localModels.list': { schema: localModelsListRequestSchema, invoke: (api, r) => api.localModels.list(r) },
+  'localModels.start': { schema: localModelsStartRequestSchema, invoke: (api, r) => api.localModels.start(r) },
+  'localModels.stop': { schema: localModelsStopRequestSchema, invoke: (api, r) => api.localModels.stop(r) },
   'settings.describe': { schema: settingsDescribeRequestSchema, invoke: (api, r) => api.settings.describe(r) },
   'settings.openDocument': { schema: settingsOpenDocumentRequestSchema, invoke: (api, r, signal) => api.settings.openDocument(r, signal) },
   'settings.update': { schema: settingsUpdateRequestSchema, invoke: (api, r) => api.settings.update(r) },

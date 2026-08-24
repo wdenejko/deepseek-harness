@@ -54,6 +54,9 @@ import {
   goalClearValueSchema,
 } from '../api/goals.schema.ts'
 import {
+  localModelsListValueSchema, localModelsStartValueSchema, localModelsStopValueSchema,
+} from '../api/local-models.schema.ts'
+import {
   settingsDescribeValueSchema, settingsMutateValueSchema, settingsOpenDocumentValueSchema,
   settingsReplaceValueSchema, settingsUpdateValueSchema,
 } from '../api/settings.schema.ts'
@@ -144,6 +147,11 @@ export interface IApiClient {
     complete(payload: RequestPayload<'goal.complete'>, signal?: AbortSignal): Promise<RpcResponse<ResponseValue<'goal.complete'>>>
     clear(payload: RequestPayload<'goal.clear'>, signal?: AbortSignal): Promise<RpcResponse<ResponseValue<'goal.clear'>>>
   }
+  localModels: {
+    list(payload: RequestPayload<'localModels.list'>, signal?: AbortSignal): Promise<RpcResponse<ResponseValue<'localModels.list'>>>
+    start(payload: RequestPayload<'localModels.start'>, signal?: AbortSignal): Promise<RpcResponse<ResponseValue<'localModels.start'>>>
+    stop(payload: RequestPayload<'localModels.stop'>, signal?: AbortSignal): Promise<RpcResponse<ResponseValue<'localModels.stop'>>>
+  }
   settings: {
     describe(payload: RequestPayload<'settings.describe'>, signal?: AbortSignal): Promise<RpcResponse<ResponseValue<'settings.describe'>>>
     openDocument(payload: RequestPayload<'settings.openDocument'>, signal?: AbortSignal): Promise<RpcResponse<ResponseValue<'settings.openDocument'>>>
@@ -211,6 +219,9 @@ const UNARY_VALUE_SCHEMAS: { [K in keyof RpcMethodMap]: z.ZodType<Wire<ResponseV
   'goal.resume': goalResumeValueSchema,
   'goal.complete': goalCompleteValueSchema,
   'goal.clear': goalClearValueSchema,
+  'localModels.list': localModelsListValueSchema,
+  'localModels.start': localModelsStartValueSchema,
+  'localModels.stop': localModelsStopValueSchema,
   'settings.describe': settingsDescribeValueSchema,
   'settings.openDocument': settingsOpenDocumentValueSchema,
   'settings.update': settingsUpdateValueSchema,
@@ -478,6 +489,12 @@ export abstract class AbstractApiClient implements IApiClient {
     resume: (payload, signal) => this.callUnary('goal.resume', payload, signal),
     complete: (payload, signal) => this.callUnary('goal.complete', payload, signal),
     clear: (payload, signal) => this.callUnary('goal.clear', payload, signal),
+  }
+
+  readonly localModels: IApiClient['localModels'] = {
+    list: (payload, signal) => this.callUnary('localModels.list', payload, signal),
+    start: (payload, signal) => this.callUnary('localModels.start', payload, signal),
+    stop: (payload, signal) => this.callUnary('localModels.stop', payload, signal),
   }
 
   readonly settings: IApiClient['settings'] = {

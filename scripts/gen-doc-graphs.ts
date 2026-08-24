@@ -505,6 +505,13 @@ const SERVICE_ROLES: ServiceRole[] = [
     note: 'Producers (background bash, PTY sends, and subagent delegations) register running work; tool-jobs is the model-facing controller that reads, lists, and kills it; jobs-local is the process-local registry.',
   },
   {
+    key: 'localModels',
+    pkg: 'local-models',
+    title: 'Remote local-model lifecycle owner',
+    mode: 'core',
+    note: 'Opt-in operator-facing service, not in shipped defaults: discovers run scripts on a remote host over ctx.subprocess (ssh), probes the model endpoint for run-state, and starts/stops one server at a time so the model dropdown can list, show, and switch the running local model. The apiproxy localModels.* RPC domain consumes it through ctx.get.',
+  },
+  {
     key: 'web',
     pkg: 'web',
     title: 'Web access provider registry',

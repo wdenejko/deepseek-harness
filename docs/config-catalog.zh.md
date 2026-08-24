@@ -1326,6 +1326,48 @@ export type Config = Readonly<Record<string, never>>
 
 来源：[`packages/llm/llm-retry/src/index.ts:24`](../packages/llm/llm-retry/src/index.ts)
 
+<a id="deepseek-aidsh-local-models"></a>
+
+## `@deepseek-ai/dsh-local-models`
+
+需要：`subprocess`
+
+```ts config-catalog
+/** Plugin config: the remote host, the model endpoint, and the llm route a started server serves. */
+export interface Config {
+  /** SSH destination of the host running the model servers (e.g. an `ssh_config` host alias). */
+  sshTarget: string
+  /** Directory of the `run-*.sh` launch scripts on the remote host; a leading `~` expands there. */
+  scriptsDir: string
+  /** Base URL of the model endpoint, probed for `/health` and `/v1/models`. */
+  probeBaseURL: string
+  /** The llm provider id whose dropdown group this seam supersedes. */
+  providerId: string
+  /** The llm selection to activate once a local server is up. */
+  route: LocalModelRoute
+  /** Local executable that reaches the remote host (default `ssh`). */
+  execCommand?: string
+  /** Remote command that stops the running server (default `pkill -f llama-server`). */
+  stopCommand?: string
+  /** How long a launched-but-unready model reads as `starting` before reverting to `stopped`. */
+  startTimeoutMs?: number
+  /** Per-request timeout for each endpoint probe. */
+  probeTimeoutMs?: number
+  /** SIGTERM→SIGKILL grace for the local `ssh` child. */
+  graceMs?: number
+}
+
+/** The llm selection a started local server routes turns to. */
+export interface LocalModelRoute {
+  /** Registered llm provider route (the single local endpoint route). */
+  provider: string
+  /** Provider-owned model id accepted by that route. */
+  model: string
+}
+```
+
+来源：[`packages/local-models/local-models/src/index.ts:45`](../packages/local-models/local-models/src/index.ts)
+
 <a id="deepseek-aidsh-lsp-stdio"></a>
 
 ## `@deepseek-ai/dsh-lsp-stdio`

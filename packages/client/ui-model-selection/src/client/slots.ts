@@ -14,12 +14,25 @@ export interface ModelSelectInjected {
   available: boolean
   /** The session's shared directory store (same instance the /model popup reads). */
   directory: SnapshotStore<ModelDirectoryState>
-  /** Refresh the advisory directory (fire-and-forget; errors land on the store). */
+  /** Refresh the advisory directory and the local catalog (fire-and-forget; errors land on the store). */
   load: () => void
+  /** Refresh only the local-model catalog (used to poll a starting model to running). */
+  loadLocal: () => void
   /**
    * Select a complete provider/model/reasoning selection.
    * @param selection - model selection and optional adapter-owned effort.
    * @returns whether the host accepted the selection.
    */
   select: (selection: ModelSelection) => Promise<boolean>
+  /**
+   * Start one local model (making it the running server) and route the session to it.
+   * @param id - the local model (run-script slug) to start.
+   * @returns whether the start was accepted.
+   */
+  startLocal: (id: string) => Promise<boolean>
+  /**
+   * Stop the running local model server.
+   * @returns whether the stop was accepted.
+   */
+  stopLocal: () => Promise<boolean>
 }
